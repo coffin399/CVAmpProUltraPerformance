@@ -95,7 +95,7 @@ class GUI:
         style.configure("TCheckbutton", background=self.bg_color, foreground=self.text_color)
 
         # Initialize tabs
-        self.notebook = ttk.Notebook(self.root, height=200, width=800)
+        self.notebook = ttk.Notebook(self.root, height=200, width=1000)
 
         self.tab_main = TabMain(self.notebook, self.manager, self.bg_color, self.card_color, self.accent_color, self.text_color, self.subtext_color)
         self.notebook.add(self.tab_main, text="Main Controls")
@@ -124,20 +124,20 @@ class GUI:
         self.root.title(f"Crude Viewer Amplifier | v{version} | kevin@blueloperlabs.ch")
 
     def run(self):
-        self.root.geometry("800x550+500+500")
+        self.root.geometry("1000x650+500+500")
         self.root.resizable(False, False)
 
         # Console log area
         console_frame = tk.Frame(self.root, bg=self.bg_color)
-        console_frame.place(x=0, y=200, width=800, height=100)
+        console_frame.place(x=0, y=200, width=1000, height=100)
         
         text_area = ScrolledText(console_frame, height=6, width=100, font=("Consolas", 9), bg="#1a1a1a", fg="#00ff00", insertbackground="#ffffff")
-        text_area.place(x=10, y=5, width=780)
+        text_area.place(x=10, y=5, width=980)
         text_area.configure(state="disabled")
 
         # Instance visualization
         instance_vis_frame = tk.Frame(self.root, bg=self.bg_color)
-        instance_vis_frame.place(x=0, y=300, width=800, height=100)
+        instance_vis_frame.place(x=0, y=300, width=1000, height=100)
         
         for row in range(5):
             for col in range(50):
@@ -149,7 +149,7 @@ class GUI:
                     width=10,
                     height=10,
                 )
-                box.place(x=10 + col * 15, y=10 + row * 15)
+                box.place(x=10 + col * 19, y=10 + row * 17)
                 self.instances_boxes.append(box)
 
         # Footer
@@ -161,7 +161,7 @@ class GUI:
             bg=self.bg_color,
         )
         lbl.bind("<Button-1>", lambda event: webbrowser.open("https://blueloperlabs.ch/cvamp/tf"))
-        lbl.place(x=330, y=520)
+        lbl.place(x=415, y=620)
 
         # redirect stdout
         def redirector(str_input):
@@ -191,6 +191,8 @@ class GUI:
 
             self.tab_main.alive_instances.configure(text=self.manager.instances_alive_count)
             self.tab_main.watching_instances.configure(text=str(self.manager.instances_watching_count))
+            self.tab_main.dead_instances.configure(text=len(self.manager.browser_instances) - self.manager.instances_alive_count)
+            self.tab_main.proxy_available.configure(text=len(self.manager.proxies.proxy_list))
 
         # Update performance metrics
         self.performance_monitor.update_network_speed()
@@ -208,12 +210,6 @@ class GUI:
         self.tab_main.gpu_usage_text.configure(text=f"{gpu_percent:.1f}%")
         self.tab_main.ram_usage_text.configure(text=f"{ram_used_gb:.1f}GB / {ram_total_gb:.1f}GB")
         self.tab_main.network_speed_text.configure(text=f"{self.performance_monitor.current_network_speed_mbps:.2f} Mbps\n({self.performance_monitor.current_network_speed_mb_s:.2f} MB/s)")
-        
-        self.tab_main.proxy_available.configure(text=len(self.manager.proxies.proxy_list))
-        
-        # Update dead instances count
-        dead_count = len(self.manager.browser_instances) - self.manager.instances_alive_count
-        self.tab_main.dead_instances.configure(text=dead_count)
 
         self.root.after(1000, self.refresher_start)
 
@@ -230,7 +226,7 @@ class TabChat(tk.Frame):
 
         # Manual Chat Frame
         manual_frame = tk.Frame(self, bg=card_color, relief="flat")
-        manual_frame.place(x=10, y=10, width=780, height=80)
+        manual_frame.place(x=10, y=10, width=980, height=85)
 
         title_manual = tk.Label(manual_frame, text="Manual Chat", font=("Segoe UI", 12, "bold"), bg=card_color, fg=text_color)
         title_manual.place(x=10, y=10)
@@ -242,11 +238,11 @@ class TabChat(tk.Frame):
 
         lbl_buy = tk.Label(manual_frame, text="Get PRO Version (Free)", fg=accent_color, cursor="hand2", bg=card_color, font=("Segoe UI", 10))
         lbl_buy.bind("<Button-1>", lambda event: webbrowser.open("https://blueloperlabs.ch/cvamp/tf"))
-        lbl_buy.place(x=550, y=42)
+        lbl_buy.place(x=750, y=50)
 
         # Auto Chat Frame
         auto_frame = tk.Frame(self, bg=card_color, relief="flat")
-        auto_frame.place(x=10, y=100, width=780, height=90)
+        auto_frame.place(x=10, y=105, width=980, height=90)
 
         title_auto = tk.Label(auto_frame, text="Auto Chat", font=("Segoe UI", 12, "bold"), bg=card_color, fg=text_color)
         title_auto.place(x=10, y=10)
@@ -309,7 +305,7 @@ class TabChat(tk.Frame):
             relief="flat",
             font=("Segoe UI", 10),
         )
-        send_auto_chat_button.place(x=580, y=37)
+        send_auto_chat_button.place(x=780, y=37)
 
 
 class TabMain(tk.Frame):
@@ -320,133 +316,147 @@ class TabMain(tk.Frame):
         self.auto_restart = tk.BooleanVar(value=manager.get_auto_restart())
         self.browser_mode = tk.StringVar(value=manager.get_browser_mode())
 
-        # Left Panel - Performance Metrics
-        left_frame = tk.Frame(self, bg=card_color, relief="flat")
-        left_frame.place(x=10, y=10, width=200, height=180)
-
-        metrics_title = tk.Label(left_frame, text="Performance Metrics", font=("Segoe UI", 12, "bold"), bg=card_color, fg=text_color)
-        metrics_title.place(x=10, y=10)
-
-        # CPU
-        cpu_label = tk.Label(left_frame, text="CPU:", font=("Segoe UI", 10), bg=card_color, fg=subtext_color)
-        cpu_label.place(x=10, y=40)
-        self.cpu_usage_text = tk.Label(left_frame, text="0.0%", font=("Segoe UI", 11, "bold"), bg=card_color, fg=accent_color)
-        self.cpu_usage_text.place(x=50, y=40)
-
-        # GPU
-        gpu_label = tk.Label(left_frame, text="GPU:", font=("Segoe UI", 10), bg=card_color, fg=subtext_color)
-        gpu_label.place(x=10, y=60)
-        self.gpu_usage_text = tk.Label(left_frame, text="0.0%", font=("Segoe UI", 11, "bold"), bg=card_color, fg=accent_color)
-        self.gpu_usage_text.place(x=50, y=60)
-
-        # RAM
-        ram_label = tk.Label(left_frame, text="RAM:", font=("Segoe UI", 10), bg=card_color, fg=subtext_color)
-        ram_label.place(x=10, y=80)
-        self.ram_usage_text = tk.Label(left_frame, text="0.0GB / 0.0GB", font=("Segoe UI", 10), bg=card_color, fg=text_color)
-        self.ram_usage_text.place(x=50, y=80)
-
-        # Network
-        network_label = tk.Label(left_frame, text="Network:", font=("Segoe UI", 10), bg=card_color, fg=subtext_color)
-        network_label.place(x=10, y=100)
-        self.network_speed_text = tk.Label(left_frame, text="0.00 Mbps\n(0.00 MB/s)", font=("Segoe UI", 9), bg=card_color, fg=text_color, justify="left")
-        self.network_speed_text.place(x=70, y=100)
-
-        # Center Panel - Controls
-        center_frame = tk.Frame(self, bg=card_color, relief="flat")
-        center_frame.place(x=220, y=10, width=360, height=180)
-
-        controls_title = tk.Label(center_frame, text="Controls", font=("Segoe UI", 12, "bold"), bg=card_color, fg=text_color)
-        controls_title.place(x=10, y=10)
-
-        # URL Entry
-        url_label = tk.Label(center_frame, text="Channel URL:", font=("Segoe UI", 10), bg=card_color, fg=subtext_color)
-        url_label.place(x=10, y=40)
+        # Left Side - Vertical Stacked Sections
+        x_position = 10
         
-        channel_url = tk.Entry(center_frame, width=42, font=("Segoe UI", 9), bg="#353535", fg=text_color, insertbackground=text_color)
-        channel_url.place(x=10, y=60)
-        channel_url.insert(0, "https://www.twitch.tv/channel_name")
-        self.channel_url_entry = channel_url
-
-        # Spawn Buttons
-        spawn_frame = tk.Frame(center_frame, bg="#353535", relief="flat")
-        spawn_frame.place(x=10, y=90, width=170, height=85)
-        
-        spawn_label = tk.Label(spawn_frame, text="Spawn Instance", font=("Segoe UI", 9, "bold"), bg="#353535", fg=subtext_color)
-        spawn_label.place(x=5, y=5)
-        
-        spawn_one = tk.Button(spawn_frame, text="Spawn 1", command=lambda: self.spawn_instance(1), bg=accent_color, fg="white", relief="flat", font=("Segoe UI", 9))
-        spawn_one.place(x=5, y=25, width=50, height=25)
-        spawn_five = tk.Button(spawn_frame, text="Spawn 5", command=lambda: self.spawn_instance(5), bg=accent_color, fg="white", relief="flat", font=("Segoe UI", 9))
-        spawn_five.place(x=60, y=25, width=50, height=25)
-        spawn_ten = tk.Button(spawn_frame, text="Spawn 10", command=lambda: self.spawn_instance(10), bg=accent_color, fg="white", relief="flat", font=("Segoe UI", 9))
-        spawn_ten.place(x=115, y=25, width=50, height=25)
-        
-        destroy_one = tk.Button(spawn_frame, text="Destroy 1", command=lambda: self.destroy_instance(1), bg="#d32f2f", fg="white", relief="flat", font=("Segoe UI", 9))
-        destroy_one.place(x=5, y=55, width=50, height=25)
-        destroy_five = tk.Button(spawn_frame, text="Destroy 5", command=lambda: self.destroy_instance(5), bg="#d32f2f", fg="white", relief="flat", font=("Segoe UI", 9))
-        destroy_five.place(x=60, y=55, width=50, height=25)
-        destroy_ten = tk.Button(spawn_frame, text="Destroy 10", command=lambda: self.destroy_instance(10), bg="#d32f2f", fg="white", relief="flat", font=("Segoe UI", 9))
-        destroy_ten.place(x=115, y=55, width=50, height=25)
-
-        # Right Panel - Instance Statistics
-        right_frame = tk.Frame(self, bg=card_color, relief="flat")
-        right_frame.place(x=590, y=10, width=200, height=180)
-
-        stats_title = tk.Label(right_frame, text="Instance Statistics", font=("Segoe UI", 12, "bold"), bg=card_color, fg=text_color)
-        stats_title.place(x=10, y=10)
-
-        # Proxies
-        proxy_label = tk.Label(right_frame, text="Proxies:", font=("Segoe UI", 10), bg=card_color, fg=subtext_color)
-        proxy_label.place(x=10, y=40)
-        self.proxy_available = tk.Label(right_frame, text="0", font=("Segoe UI", 11, "bold"), bg=card_color, fg=accent_color)
-        self.proxy_available.place(x=70, y=40)
-
-        # Watching
-        watching_label = tk.Label(right_frame, text="Watching:", font=("Segoe UI", 10), bg=card_color, fg=subtext_color)
-        watching_label.place(x=10, y=60)
-        self.watching_instances = tk.Label(right_frame, text="0", font=("Segoe UI", 11, "bold"), bg=card_color, fg="#4caf50")
-        self.watching_instances.place(x=85, y=60)
-
-        # Alive
-        alive_label = tk.Label(right_frame, text="Alive:", font=("Segoe UI", 10), bg=card_color, fg=subtext_color)
-        alive_label.place(x=10, y=80)
-        self.alive_instances = tk.Label(right_frame, text="0", font=("Segoe UI", 11, "bold"), bg=card_color, fg="#2196f3")
-        self.alive_instances.place(x=60, y=80)
-
-        # Dead
-        dead_label = tk.Label(right_frame, text="Dead:", font=("Segoe UI", 10), bg=card_color, fg=subtext_color)
-        dead_label.place(x=10, y=100)
-        self.dead_instances = tk.Label(right_frame, text="0", font=("Segoe UI", 11, "bold"), bg=card_color, fg="#f44336")
-        self.dead_instances.place(x=60, y=100)
-
-        # Browser Mode Selection (at the top center)
+        # 1. Performance Mode Section
         mode_frame = tk.Frame(self, bg=card_color, relief="flat")
-        mode_frame.place(x=220, y=195, width=360, height=45)
-
-        mode_label = tk.Label(mode_frame, text="Browser Mode:", font=("Segoe UI", 10, "bold"), bg=card_color, fg=text_color)
+        mode_frame.place(x=x_position, y=10, width=300, height=60)
+        
+        mode_label = tk.Label(mode_frame, text="Performance Mode:", font=("Segoe UI", 11, "bold"), bg=card_color, fg=text_color)
         mode_label.place(x=10, y=5)
-
+        
         mode_standard = tk.Radiobutton(mode_frame, text="Standard (Chrome)", variable=self.browser_mode, value="standard",
                                         command=self.on_mode_change, bg=card_color, fg=subtext_color, selectcolor="#353535",
                                         activebackground=card_color, activeforeground=text_color, font=("Segoe UI", 9))
-        mode_standard.place(x=10, y=25)
-
+        mode_standard.place(x=10, y=30)
+        
         mode_performance = tk.Radiobutton(mode_frame, text="Performance (Firefox)", variable=self.browser_mode, value="performance",
                                           command=self.on_mode_change, bg=card_color, fg=subtext_color, selectcolor="#353535",
                                           activebackground=card_color, activeforeground=text_color, font=("Segoe UI", 9))
-        mode_performance.place(x=140, y=25)
+        mode_performance.place(x=130, y=30)
 
         mode_ultra = tk.Radiobutton(mode_frame, text="Ultra (WebKit)", variable=self.browser_mode, value="ultra",
                                     command=self.on_mode_change, bg=card_color, fg=subtext_color, selectcolor="#353535",
                                     activebackground=card_color, activeforeground=text_color, font=("Segoe UI", 9))
-        mode_ultra.place(x=260, y=25)
+        mode_ultra.place(x=10, y=55)
 
-        # Checkboxes at the bottom
-        controls_check_frame = tk.Frame(self, bg=card_color, relief="flat")
-        controls_check_frame.place(x=10, y=195, width=200, height=45)
+        # 2. Channel URL Section
+        url_frame = tk.Frame(self, bg=card_color, relief="flat")
+        url_frame.place(x=x_position, y=80, width=300, height=50)
+        
+        url_label = tk.Label(url_frame, text="Channel URL:", font=("Segoe UI", 11, "bold"), bg=card_color, fg=text_color)
+        url_label.place(x=10, y=5)
+        
+        channel_url = tk.Entry(url_frame, width=35, font=("Segoe UI", 9), bg="#353535", fg=text_color, insertbackground=text_color)
+        channel_url.place(x=10, y=25)
+        channel_url.insert(0, "https://www.twitch.tv/channel_name")
+        self.channel_url_entry = channel_url
 
+        # 3. Spawn Instances Section
+        spawn_frame = tk.Frame(self, bg=card_color, relief="flat")
+        spawn_frame.place(x=x_position, y=140, width=300, height=120)
+        
+        spawn_label = tk.Label(spawn_frame, text="Spawn Instances:", font=("Segoe UI", 11, "bold"), bg=card_color, fg=text_color)
+        spawn_label.place(x=10, y=5)
+        
+        # Spawn buttons
+        spawn_one = tk.Button(spawn_frame, text="Spawn 1", command=lambda: self.spawn_instance(1), bg=accent_color, fg="white", relief="flat", font=("Segoe UI", 9))
+        spawn_one.place(x=10, y=35, width=50, height=30)
+        
+        spawn_five = tk.Button(spawn_frame, text="Spawn 5", command=lambda: self.spawn_instance(5), bg=accent_color, fg="white", relief="flat", font=("Segoe UI", 9))
+        spawn_five.place(x=70, y=35, width=50, height=30)
+        
+        spawn_ten = tk.Button(spawn_frame, text="Spawn 10", command=lambda: self.spawn_instance(10), bg=accent_color, fg="white", relief="flat", font=("Segoe UI", 9))
+        spawn_ten.place(x=130, y=35, width=50, height=30)
+        
+        spawn_fifteen = tk.Button(spawn_frame, text="Spawn 15", command=lambda: self.spawn_instance(15), bg=accent_color, fg="white", relief="flat", font=("Segoe UI", 9))
+        spawn_fifteen.place(x=190, y=35, width=50, height=30)
+        
+        # Destroy buttons
+        destroy_one = tk.Button(spawn_frame, text="Destroy 1", command=lambda: self.destroy_instance(1), bg="#d32f2f", fg="white", relief="flat", font=("Segoe UI", 9))
+        destroy_one.place(x=10, y=70, width=50, height=30)
+        
+        destroy_five = tk.Button(spawn_frame, text="Destroy 5", command=lambda: self.destroy_instance(5), bg="#d32f2f", fg="white", relief="flat", font=("Segoe UI", 9))
+        destroy_five.place(x=70, y=70, width=50, height=30)
+        
+        destroy_ten = tk.Button(spawn_frame, text="Destroy 10", command=lambda: self.destroy_instance(10), bg="#d32f2f", fg="white", relief="flat", font=("Segoe UI", 9))
+        destroy_ten.place(x=130, y=70, width=50, height=30)
+        
+        destroy_all = tk.Button(spawn_frame, text="Destroy All", command=lambda: self.destroy_all_instance(), bg="#d32f2f", fg="white", relief="flat", font=("Segoe UI", 9))
+        destroy_all.place(x=190, y=70, width=65, height=30)
+
+        # 4. Instance Statistics Section
+        stats_frame = tk.Frame(self, bg=card_color, relief="flat")
+        stats_frame.place(x=x_position, y=270, width=300, height=110)
+        
+        stats_label = tk.Label(stats_frame, text="Instance Statistics:", font=("Segoe UI", 11, "bold"), bg=card_color, fg=text_color)
+        stats_label.place(x=10, y=5)
+        
+        # Proxies
+        proxy_label = tk.Label(stats_frame, text="Proxies:", font=("Segoe UI", 10), bg=card_color, fg=subtext_color)
+        proxy_label.place(x=10, y=30)
+        self.proxy_available = tk.Label(stats_frame, text="0", font=("Segoe UI", 11, "bold"), bg=card_color, fg=accent_color)
+        self.proxy_available.place(x=75, y=30)
+        
+        # Watching
+        watching_label = tk.Label(stats_frame, text="Watching:", font=("Segoe UI", 10), bg=card_color, fg=subtext_color)
+        watching_label.place(x=10, y=50)
+        self.watching_instances = tk.Label(stats_frame, text="0", font=("Segoe UI", 11, "bold"), bg=card_color, fg="#4caf50")
+        self.watching_instances.place(x=85, y=50)
+        
+        # Alive
+        alive_label = tk.Label(stats_frame, text="Alive:", font=("Segoe UI", 10), bg=card_color, fg=subtext_color)
+        alive_label.place(x=10, y=70)
+        self.alive_instances = tk.Label(stats_frame, text="0", font=("Segoe UI", 11, "bold"), bg=card_color, fg="#2196f3")
+        self.alive_instances.place(x=65, y=70)
+        
+        # Dead
+        dead_label = tk.Label(stats_frame, text="Dead:", font=("Segoe UI", 10), bg=card_color, fg=subtext_color)
+        dead_label.place(x=10, y=90)
+        self.dead_instances = tk.Label(stats_frame, text="0", font=("Segoe UI", 11, "bold"), bg=card_color, fg="#f44336")
+        self.dead_instances.place(x=65, y=90)
+
+        # 5. Performance Metrics Section
+        perf_frame = tk.Frame(self, bg=card_color, relief="flat")
+        perf_frame.place(x=x_position, y=390, width=300, height=110)
+        
+        perf_label = tk.Label(perf_frame, text="Performance Metrics:", font=("Segoe UI", 11, "bold"), bg=card_color, fg=text_color)
+        perf_label.place(x=10, y=5)
+        
+        # CPU
+        cpu_label = tk.Label(perf_frame, text="CPU:", font=("Segoe UI", 10), bg=card_color, fg=subtext_color)
+        cpu_label.place(x=10, y=30)
+        self.cpu_usage_text = tk.Label(perf_frame, text="0.0%", font=("Segoe UI", 11, "bold"), bg=card_color, fg=accent_color)
+        self.cpu_usage_text.place(x=50, y=30)
+        
+        # GPU
+        gpu_label = tk.Label(perf_frame, text="GPU:", font=("Segoe UI", 10), bg=card_color, fg=subtext_color)
+        gpu_label.place(x=10, y=50)
+        self.gpu_usage_text = tk.Label(perf_frame, text="0.0%", font=("Segoe UI", 11, "bold"), bg=card_color, fg=accent_color)
+        self.gpu_usage_text.place(x=50, y=50)
+        
+        # RAM
+        ram_label = tk.Label(perf_frame, text="RAM:", font=("Segoe UI", 10), bg=card_color, fg=subtext_color)
+        ram_label.place(x=10, y=70)
+        self.ram_usage_text = tk.Label(perf_frame, text="0.0GB / 0.0GB", font=("Segoe UI", 10), bg=card_color, fg=text_color)
+        self.ram_usage_text.place(x=50, y=70)
+        
+        # Network
+        network_label = tk.Label(perf_frame, text="Network:", font=("Segoe UI", 10), bg=card_color, fg=subtext_color)
+        network_label.place(x=10, y=90)
+        self.network_speed_text = tk.Label(perf_frame, text="0.00 Mbps\n(0.00 MB/s)", font=("Segoe UI", 9), bg=card_color, fg=text_color, justify="left")
+        self.network_speed_text.place(x=70, y=90)
+
+        # 6. Controls Section
+        controls_frame = tk.Frame(self, bg=card_color, relief="flat")
+        controls_frame.place(x=x_position, y=510, width=300, height=60)
+        
+        controls_label = tk.Label(controls_frame, text="Controls:", font=("Segoe UI", 11, "bold"), bg=card_color, fg=text_color)
+        controls_label.place(x=10, y=5)
+        
         headless_checkbox = tk.Checkbutton(
-            controls_check_frame,
+            controls_frame,
             text="Headless Mode",
             variable=self.headless,
             command=lambda: self.manager.set_headless(self.headless.get()),
@@ -455,12 +465,12 @@ class TabMain(tk.Frame):
             selectcolor="#353535",
             activebackground=card_color,
             activeforeground=text_color,
-            font=("Segoe UI", 9),
+            font=("Segoe UI", 10),
         )
-        headless_checkbox.place(x=10, y=0)
-
+        headless_checkbox.place(x=10, y=30)
+        
         auto_restart_checkbox = tk.Checkbutton(
-            controls_check_frame,
+            controls_frame,
             variable=self.auto_restart,
             text="Auto Restart",
             command=lambda: self.manager.set_auto_restart(self.auto_restart.get()),
@@ -469,9 +479,9 @@ class TabMain(tk.Frame):
             selectcolor="#353535",
             activebackground=card_color,
             activeforeground=text_color,
-            font=("Segoe UI", 9),
+            font=("Segoe UI", 10),
         )
-        auto_restart_checkbox.place(x=10, y=25)
+        auto_restart_checkbox.place(x=140, y=30)
 
     def on_mode_change(self):
         self.manager.set_browser_mode(self.browser_mode.get())
@@ -494,6 +504,10 @@ class TabMain(tk.Frame):
         
         for _ in range(min(count, len(self.manager.browser_instances))):
             threading.Thread(target=self.manager.delete_latest).start()
+    
+    def destroy_all_instance(self):
+        print("Destroying all instances. Please wait for alive & watching instances decrease.")
+        threading.Thread(target=self.manager.delete_all_instances).start()
 
 
 class TabAbout(tk.Frame):
@@ -560,3 +574,4 @@ class InstanceBox(tk.Frame):
 
         color = color_codes[status.value]
         self.configure(background=color)
+
