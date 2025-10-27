@@ -38,7 +38,7 @@ class PerformanceMonitor:
         """Calculate network speed in Mbps and MB/s"""
         try:
             net_io = psutil.net_io_counters()
-            current_bytes_sent = net_io.bytes_sent
+            current_bytes_sent = net_io.bytes_bytes_sent
             current_bytes_recv = net_io.bytes_recv
             current_total = current_bytes_sent + current_bytes_recv
             
@@ -338,7 +338,7 @@ class TabMain(tk.Frame):
                                           activebackground=card_color, activeforeground=text_color, font=("Segoe UI", 9))
         mode_performance.place(x=10, y=55)
 
-        mode_ultra = tk.Radiobutton(mode_frame, text="Ultra (WebKit)", variable=self.browser_mode, value="ultra",
+        mode_ultra = tk.Radiobutton(mode_frame, text="UltraPerformance (WebKit)", variable=self.browser_mode, value="ultra",
                                     command=self.on_mode_change, bg=card_color, fg=subtext_color, selectcolor="#353535",
                                     activebackground=card_color, activeforeground=text_color, font=("Segoe UI", 9))
         mode_ultra.place(x=10, y=80)
@@ -364,29 +364,29 @@ class TabMain(tk.Frame):
         
         # Spawn buttons
         spawn_one = tk.Button(spawn_frame, text="Spawn 1", command=lambda: self.spawn_instance(1), bg=accent_color, fg="white", relief="flat", font=("Segoe UI", 9))
-        spawn_one.place(x=10, y=35, width=50, height=30)
+        spawn_one.place(x=10, y=35, width=60, height=30) # Increased width
         
         spawn_five = tk.Button(spawn_frame, text="Spawn 5", command=lambda: self.spawn_instance(5), bg=accent_color, fg="white", relief="flat", font=("Segoe UI", 9))
-        spawn_five.place(x=70, y=35, width=50, height=30)
+        spawn_five.place(x=75, y=35, width=60, height=30) # Increased width, adjusted x
         
         spawn_ten = tk.Button(spawn_frame, text="Spawn 10", command=lambda: self.spawn_instance(10), bg=accent_color, fg="white", relief="flat", font=("Segoe UI", 9))
-        spawn_ten.place(x=130, y=35, width=50, height=30)
+        spawn_ten.place(x=140, y=35, width=65, height=30) # Increased width, adjusted x
         
         spawn_fifteen = tk.Button(spawn_frame, text="Spawn 15", command=lambda: self.spawn_instance(15), bg=accent_color, fg="white", relief="flat", font=("Segoe UI", 9))
-        spawn_fifteen.place(x=190, y=35, width=50, height=30)
+        spawn_fifteen.place(x=210, y=35, width=65, height=30) # Increased width, adjusted x
         
         # Destroy buttons
         destroy_one = tk.Button(spawn_frame, text="Destroy 1", command=lambda: self.destroy_instance(1), bg="#d32f2f", fg="white", relief="flat", font=("Segoe UI", 9))
-        destroy_one.place(x=10, y=70, width=50, height=30)
+        destroy_one.place(x=10, y=70, width=60, height=30) # Increased width
         
         destroy_five = tk.Button(spawn_frame, text="Destroy 5", command=lambda: self.destroy_instance(5), bg="#d32f2f", fg="white", relief="flat", font=("Segoe UI", 9))
-        destroy_five.place(x=70, y=70, width=50, height=30)
+        destroy_five.place(x=75, y=70, width=60, height=30) # Increased width, adjusted x
         
         destroy_ten = tk.Button(spawn_frame, text="Destroy 10", command=lambda: self.destroy_instance(10), bg="#d32f2f", fg="white", relief="flat", font=("Segoe UI", 9))
-        destroy_ten.place(x=130, y=70, width=50, height=30)
+        destroy_ten.place(x=140, y=70, width=65, height=30) # Increased width, adjusted x
         
         destroy_all = tk.Button(spawn_frame, text="Destroy All", command=lambda: self.destroy_all_instance(), bg="#d32f2f", fg="white", relief="flat", font=("Segoe UI", 9))
-        destroy_all.place(x=190, y=70, width=65, height=30)
+        destroy_all.place(x=210, y=70, width=65, height=30) # Adjusted x
 
         # 4. Instance Statistics Section
         stats_frame = tk.Frame(self, bg=card_color, relief="flat")
