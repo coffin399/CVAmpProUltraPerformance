@@ -124,7 +124,7 @@ class GUI:
         self.root.title(f"Crude Viewer Amplifier | v{version} | kevin@blueloperlabs.ch")
 
     def run(self):
-        self.root.geometry("800x400+500+500")
+        self.root.geometry("800x550+500+500")
         self.root.resizable(False, False)
 
         # Console log area
@@ -161,7 +161,7 @@ class GUI:
             bg=self.bg_color,
         )
         lbl.bind("<Button-1>", lambda event: webbrowser.open("https://blueloperlabs.ch/cvamp/tf"))
-        lbl.place(x=330, y=370)
+        lbl.place(x=330, y=520)
 
         # redirect stdout
         def redirector(str_input):
