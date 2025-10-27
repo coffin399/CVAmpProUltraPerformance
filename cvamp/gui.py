@@ -95,7 +95,7 @@ class GUI:
         style.configure("TCheckbutton", background=self.bg_color, foreground=self.text_color)
 
         # Initialize tabs
-        self.notebook = ttk.Notebook(self.root, height=200, width=1000)
+        self.notebook = ttk.Notebook(self.root, height=280, width=1000)
 
         self.tab_main = TabMain(self.notebook, self.manager, self.bg_color, self.card_color, self.accent_color, self.text_color, self.subtext_color)
         self.notebook.add(self.tab_main, text="Main Controls")
@@ -124,33 +124,35 @@ class GUI:
         self.root.title(f"Crude Viewer Amplifier | v{version} | kevin@blueloperlabs.ch")
 
     def run(self):
-        self.root.geometry("1000x650+500+500")
+        self.root.geometry("1000x750+500+500")
         self.root.resizable(False, False)
 
-        # Console log area
+        # Console log area (left side)
         console_frame = tk.Frame(self.root, bg=self.bg_color)
-        console_frame.place(x=0, y=200, width=1000, height=100)
+        console_frame.place(x=0, y=280, width=680, height=120)
         
-        text_area = ScrolledText(console_frame, height=6, width=100, font=("Consolas", 9), bg="#1a1a1a", fg="#00ff00", insertbackground="#ffffff")
-        text_area.place(x=10, y=5, width=980)
+        text_area = ScrolledText(console_frame, height=8, width=100, font=("Consolas", 9), bg="#1a1a1a", fg="#00ff00", insertbackground="#ffffff")
+        text_area.place(x=10, y=5, width=660)
         text_area.configure(state="disabled")
 
-        # Instance visualization
+        # Instance visualization (right side as square grid)
         instance_vis_frame = tk.Frame(self.root, bg=self.bg_color)
-        instance_vis_frame.place(x=0, y=300, width=1000, height=100)
+        instance_vis_frame.place(x=690, y=280, width=310, height=120)
         
+        # Create square grid - 5 rows x 10 cols for better square appearance
         for row in range(5):
-            for col in range(50):
+            for col in range(10):
                 box = InstanceBox(
                     self.manager,
                     instance_vis_frame,
                     bd=0.5,
                     relief="raised",
-                    width=10,
-                    height=10,
+                    width=20,
+                    height=20,
                 )
-                box.place(x=10 + col * 19, y=10 + row * 17)
-                self.instances_boxes.append(box)
+                box.place(x=5 + col * 30, y=5 + row * 22)
+                if row * 10 + col < 50:  # Only create 50 boxes total
+                    self.instances_boxes.append(box)
 
         # Footer
         lbl = tk.Label(
@@ -161,7 +163,7 @@ class GUI:
             bg=self.bg_color,
         )
         lbl.bind("<Button-1>", lambda event: webbrowser.open("https://blueloperlabs.ch/cvamp/tf"))
-        lbl.place(x=415, y=620)
+        lbl.place(x=415, y=720)
 
         # redirect stdout
         def redirector(str_input):
@@ -226,26 +228,26 @@ class TabChat(tk.Frame):
 
         # Manual Chat Frame
         manual_frame = tk.Frame(self, bg=card_color, relief="flat")
-        manual_frame.place(x=10, y=10, width=980, height=85)
+        manual_frame.place(x=10, y=10, width=980, height=70)
 
         title_manual = tk.Label(manual_frame, text="Manual Chat", font=("Segoe UI", 12, "bold"), bg=card_color, fg=text_color)
-        title_manual.place(x=10, y=10)
+        title_manual.place(x=10, y=5)
 
         chat_message_box = tk.Entry(manual_frame, width=70, font=("Segoe UI", 10), bg="#353535", fg=text_color, insertbackground=text_color)
-        chat_message_box.place(x=10, y=40)
+        chat_message_box.place(x=10, y=35)
         chat_message_box.insert(0, "Available in the PRO version - now free for everyone!")
         chat_message_box.configure(state="disabled")
 
         lbl_buy = tk.Label(manual_frame, text="Get PRO Version (Free)", fg=accent_color, cursor="hand2", bg=card_color, font=("Segoe UI", 10))
         lbl_buy.bind("<Button-1>", lambda event: webbrowser.open("https://blueloperlabs.ch/cvamp/tf"))
-        lbl_buy.place(x=750, y=50)
+        lbl_buy.place(x=750, y=38)
 
         # Auto Chat Frame
         auto_frame = tk.Frame(self, bg=card_color, relief="flat")
-        auto_frame.place(x=10, y=105, width=980, height=90)
+        auto_frame.place(x=10, y=90, width=980, height=75)
 
         title_auto = tk.Label(auto_frame, text="Auto Chat", font=("Segoe UI", 12, "bold"), bg=card_color, fg=text_color)
-        title_auto.place(x=10, y=10)
+        title_auto.place(x=10, y=5)
 
         chat_switch = tk.Checkbutton(
             auto_frame,
@@ -259,7 +261,7 @@ class TabChat(tk.Frame):
             activeforeground=text_color,
             font=("Segoe UI", 10),
         )
-        chat_switch.place(x=15, y=40)
+        chat_switch.place(x=15, y=32)
 
         self.chat_timer_start = tk.Spinbox(
             auto_frame,
@@ -274,7 +276,7 @@ class TabChat(tk.Frame):
             fg=text_color,
             font=("Segoe UI", 10),
         )
-        self.chat_timer_start.place(x=160, y=40)
+        self.chat_timer_start.place(x=160, y=32)
 
         self.chat_timer_stop = tk.Spinbox(
             auto_frame,
@@ -289,10 +291,10 @@ class TabChat(tk.Frame):
             fg=text_color,
             font=("Segoe UI", 10),
         )
-        self.chat_timer_stop.place(x=210, y=40)
+        self.chat_timer_stop.place(x=210, y=32)
 
         chat_interval_text = tk.Label(auto_frame, text="Chat interval range (s)", bg=card_color, fg=subtext_color, font=("Segoe UI", 10))
-        chat_interval_text.place(x=270, y=42)
+        chat_interval_text.place(x=270, y=34)
 
         send_auto_chat_button = tk.Button(
             auto_frame,
@@ -305,7 +307,7 @@ class TabChat(tk.Frame):
             relief="flat",
             font=("Segoe UI", 10),
         )
-        send_auto_chat_button.place(x=780, y=37)
+        send_auto_chat_button.place(x=780, y=30)
 
 
 class TabMain(tk.Frame):
@@ -321,7 +323,7 @@ class TabMain(tk.Frame):
         
         # 1. Performance Mode Section
         mode_frame = tk.Frame(self, bg=card_color, relief="flat")
-        mode_frame.place(x=x_position, y=10, width=300, height=60)
+        mode_frame.place(x=x_position, y=10, width=300, height=80)
         
         mode_label = tk.Label(mode_frame, text="Performance Mode:", font=("Segoe UI", 11, "bold"), bg=card_color, fg=text_color)
         mode_label.place(x=10, y=5)
@@ -334,16 +336,16 @@ class TabMain(tk.Frame):
         mode_performance = tk.Radiobutton(mode_frame, text="Performance (Firefox)", variable=self.browser_mode, value="performance",
                                           command=self.on_mode_change, bg=card_color, fg=subtext_color, selectcolor="#353535",
                                           activebackground=card_color, activeforeground=text_color, font=("Segoe UI", 9))
-        mode_performance.place(x=130, y=30)
+        mode_performance.place(x=10, y=55)
 
         mode_ultra = tk.Radiobutton(mode_frame, text="Ultra (WebKit)", variable=self.browser_mode, value="ultra",
                                     command=self.on_mode_change, bg=card_color, fg=subtext_color, selectcolor="#353535",
                                     activebackground=card_color, activeforeground=text_color, font=("Segoe UI", 9))
-        mode_ultra.place(x=10, y=55)
+        mode_ultra.place(x=10, y=80)
 
         # 2. Channel URL Section
         url_frame = tk.Frame(self, bg=card_color, relief="flat")
-        url_frame.place(x=x_position, y=80, width=300, height=50)
+        url_frame.place(x=x_position, y=100, width=300, height=50)
         
         url_label = tk.Label(url_frame, text="Channel URL:", font=("Segoe UI", 11, "bold"), bg=card_color, fg=text_color)
         url_label.place(x=10, y=5)
@@ -355,7 +357,7 @@ class TabMain(tk.Frame):
 
         # 3. Spawn Instances Section
         spawn_frame = tk.Frame(self, bg=card_color, relief="flat")
-        spawn_frame.place(x=x_position, y=140, width=300, height=120)
+        spawn_frame.place(x=x_position, y=160, width=300, height=120)
         
         spawn_label = tk.Label(spawn_frame, text="Spawn Instances:", font=("Segoe UI", 11, "bold"), bg=card_color, fg=text_color)
         spawn_label.place(x=10, y=5)
@@ -388,7 +390,7 @@ class TabMain(tk.Frame):
 
         # 4. Instance Statistics Section
         stats_frame = tk.Frame(self, bg=card_color, relief="flat")
-        stats_frame.place(x=x_position, y=270, width=300, height=110)
+        stats_frame.place(x=x_position, y=290, width=300, height=110)
         
         stats_label = tk.Label(stats_frame, text="Instance Statistics:", font=("Segoe UI", 11, "bold"), bg=card_color, fg=text_color)
         stats_label.place(x=10, y=5)
@@ -419,7 +421,7 @@ class TabMain(tk.Frame):
 
         # 5. Performance Metrics Section
         perf_frame = tk.Frame(self, bg=card_color, relief="flat")
-        perf_frame.place(x=x_position, y=390, width=300, height=110)
+        perf_frame.place(x=x_position, y=410, width=300, height=110)
         
         perf_label = tk.Label(perf_frame, text="Performance Metrics:", font=("Segoe UI", 11, "bold"), bg=card_color, fg=text_color)
         perf_label.place(x=10, y=5)
@@ -450,7 +452,7 @@ class TabMain(tk.Frame):
 
         # 6. Controls Section
         controls_frame = tk.Frame(self, bg=card_color, relief="flat")
-        controls_frame.place(x=x_position, y=510, width=300, height=60)
+        controls_frame.place(x=x_position, y=530, width=300, height=60)
         
         controls_label = tk.Label(controls_frame, text="Controls:", font=("Segoe UI", 11, "bold"), bg=card_color, fg=text_color)
         controls_label.place(x=10, y=5)
