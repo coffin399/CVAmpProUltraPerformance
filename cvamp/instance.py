@@ -26,6 +26,7 @@ class Instance(ABC):
         headless=False,
         auto_restart=False,
         instance_id=-1,
+        browser_mode="standard",
     ):
         self.playwright = None
         self.context = None
@@ -40,6 +41,7 @@ class Instance(ABC):
         self.target_url = target_url
         self.headless = headless
         self.auto_restart = auto_restart
+        self.browser_mode = browser_mode  # "standard", "performance", "ultra"
 
         self.last_restart_dt = datetime.datetime.now()
 
@@ -124,22 +126,7 @@ class Instance(ABC):
         self.page.screenshot(path=filename)
 
     def spawn_page(self, restart=False):
-        CHROMIUM_ARGS = [
-            "--window-position={},{}".format(self.location_info["x"], self.location_info["y"]),
-            "--no-sandbox",
-            "--disable-setuid-sandbox",
-            "--no-first-run",
-            "--disable-blink-features=AutomationControlled",
-            "--mute-audio",
-            "--webrtc-ip-handling-policy=disable_non_proxied_udp",
-            "--force-webrtc-ip-handling-policy",
-        ]
-
-        if self.headless:
-            CHROMIUM_ARGS.append("--headless")
-
         proxy_dict = self.proxy_dict
-
         if not proxy_dict:
             proxy_dict = None
 
@@ -147,17 +134,65 @@ class Instance(ABC):
 
         self.playwright = sync_playwright().start()
 
-        self.browser = self.playwright.chromium.launch(
-            proxy=proxy_dict,
-            channel="chrome",
-            headless=False,
-            args=CHROMIUM_ARGS,
-        )
+        # Select browser based on mode
+        if self.browser_mode == "standard":
+            # Standard mode - Chrome
+            CHROMIUM_ARGS = [
+                "--window-position={},{}".format(self.location_info["x"], self.location_info["y"]),
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--no-first-run",
+                "--disable-blink-features=AutomationControlled",
+                "--mute-audio",
+                "--webrtc-ip-handling-policy=disable_non_proxied_udp",
+                "--force-webrtc-ip-handling-policy",
+            ]
 
-        major_version = self.browser.version.split(".")[0]
+            if self.headless:
+                CHROMIUM_ARGS.append("--headless")
+
+            self.browser = self.playwright.chromium.launch(
+                proxy=proxy_dict,
+                channel="chrome",
+                headless=False,
+                args=CHROMIUM_ARGS,
+            )
+            major_version = self.browser.version.split(".")[0]
+            user_agent = f"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{major_version}.0.0.0 Safari/537.36"
+        elif self.browser_mode == "performance":
+            # Performance mode - Firefox
+            FIREFOX_ARGS = [
+                "--window-position={},{}".format(self.location_info["x"], self.location_info["y"]),
+            ]
+
+            self.browser = self.playwright.firefox.launch(
+                proxy=proxy_dict,
+                headless=self.headless,
+                firefox_user_prefs={
+                    "media.volume_scale": "0.0",
+                },
+            )
+            user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0"
+        elif self.browser_mode == "ultra":
+            # Ultra Performance mode - WebKit
+            self.browser = self.playwright.webkit.launch(
+                proxy=proxy_dict,
+                headless=self.headless,
+            )
+            user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15"
+        else:
+            # Default to Chrome if mode is invalid
+            self.browser = self.playwright.chromium.launch(
+                proxy=proxy_dict,
+                channel="chrome",
+                headless=False,
+            )
+            major_version = self.browser.version.split(".")[0]
+            user_agent = f"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{major_version}.0.0.0 Safari/537.36"
+
         self.context = self.browser.new_context(
             viewport={"width": 800, "height": 600},
-            user_agent=f"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{major_version}.0.0.0 Safari/537.36",
+            user_agent=user_agent,
             proxy=proxy_dict,
         )
 

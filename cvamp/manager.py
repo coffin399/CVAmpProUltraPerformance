@@ -28,6 +28,7 @@ class InstanceManager:
         proxy_file_name,
         spawn_interval_seconds=2,
         target_url=None,
+        browser_mode="standard",
     ):
         logger.info(f"Manager start on {platform.platform()}")
 
@@ -35,6 +36,7 @@ class InstanceManager:
         self._delete_thread_count = delete_thread_count
         self._headless = headless
         self._auto_restart = auto_restart
+        self._browser_mode = browser_mode
         self.proxies = ProxyGetter(os.path.join(os.getcwd(), "proxy", proxy_file_name))
         self.spawn_interval_seconds = spawn_interval_seconds
         self.target_url = target_url
@@ -62,6 +64,12 @@ class InstanceManager:
         logger.info(f"Setting auto-restart to " + str(new_value))
         self._auto_restart = new_value
         self.reconfigure_auto_restart_status()
+
+    def get_browser_mode(self) -> str:
+        return self._browser_mode
+
+    def set_browser_mode(self, new_value: str):
+        self._browser_mode = new_value
 
     def __del__(self):
         print("Deleting manager: cleaning up instances", datetime.datetime.now())
@@ -166,6 +174,7 @@ class InstanceManager:
                 headless=self._headless,
                 auto_restart=self._auto_restart,
                 instance_id=browser_instance_id,
+                browser_mode=self._browser_mode,
             )
 
             self.browser_instances[browser_instance_id] = browser_instance
