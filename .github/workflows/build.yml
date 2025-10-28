@@ -45,17 +45,29 @@ jobs:
           echo "output_filename=CVAmp${{steps.read_toml.outputs.value}}_${today}_${{runner.os}}-${{runner.arch}}_experimental" >> $GITHUB_ENV
         fi
 
-    - name: Build executable
+    - name: Build Windows executable
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        $browser_path = "$env:LOCALAPPDATA/ms-playwright"
+        poetry run pyinstaller main_gui.py --onefile --add-data "$browser_path;ms-playwright" --add-binary "cvamp_logo.ico;." --add-binary "pyproject.toml;." --icon cvamp_logo.ico --name ${{env.output_filename}}
+        if (Test-Path -Path ./proxy) {
+          Move-Item -Path ./proxy -Destination ./dist/
+        }
+
+    - name: Build Linux/macOS executable
+      if: matrix.os != 'windows-latest'
       shell: bash
       run: |
-        if [ "$RUNNER_OS" == "Windows" ]; then
-          poetry run pyinstaller main_gui.py --onefile --add-data "$LOCALAPPDATA/ms-playwright;ms-playwright" --add-binary "cvamp_logo.ico;." --add-binary "pyproject.toml;." --icon cvamp_logo.ico --name ${{env.output_filename}}
-        elif [ "$RUNNER_OS" == "Linux" ]; then
-          poetry run pyinstaller main_gui.py --onefile --add-data "$HOME/.cache/ms-playwright:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
-        elif [ "$RUNNER_OS" == "macOS" ]; then
-          poetry run pyinstaller main_gui.py --onefile --add-data "$HOME/Library/Caches/ms-playwright:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          browser_path="$HOME/.cache/ms-playwright"
+        else # macOS
+          browser_path="$HOME/Library/Caches/ms-playwright"
         fi
-        mv ./proxy/ ./dist/
+        poetry run pyinstaller main_gui.py --onefile --add-data "$browser_path:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
+        if [ -d "./proxy/" ]; then
+            mv ./proxy/ ./dist/
+        fi
 
     - name: Zip executable
       uses: vimtor/action-zip@v1
