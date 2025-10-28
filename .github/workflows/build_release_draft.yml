@@ -60,19 +60,36 @@ jobs:
             Move-Item -Path ./proxy -Destination ./dist/
           }
 
-      - name: Build Linux/macOS executable
-        if: matrix.os != 'windows-2022'
+      - name: Build Linux executable
+        if: matrix.os == 'ubuntu-22.04'
         shell: bash
         run: |
-          if [ "$RUNNER_OS" == "Linux" ]; then
-            source_browsers="$HOME/.cache/ms-playwright"
-            cp -r "$source_browsers" "./ms-playwright-temp"
-            poetry run pyinstaller main_gui.py --onefile --add-data "./ms-playwright-temp:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
-          else # macOS
-            source_browsers="$HOME/Library/Caches/ms-playwright"
-            cp -r "$source_browsers" "./ms-playwright-temp"
-            poetry run pyinstaller main_gui.py --onefile --no-codesign --add-data "./ms-playwright-temp:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
+          # Copy browsers to a local folder
+          source_browsers="$HOME/.cache/ms-playwright"
+          cp -r "$source_browsers" "./ms-playwright-temp"
+
+          # Build the executable, adding the local browser copy
+          poetry run pyinstaller main_gui.py --onefile --add-data "./ms-playwright-temp:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
+          
+          if [ -d "./proxy/" ]; then
+              mv ./proxy/ ./dist/
           fi
+
+      - name: Build macOS executable
+        if: startsWith(matrix.os, 'macos-')
+        shell: bash
+        env:
+          PYINSTALLER_COMPILE_BOOTLOADER: 1
+        run: |
+          # Copy browsers to a local folder
+          source_browsers="$HOME/Library/Caches/ms-playwright"
+          cp -r "$source_browsers" "./ms-playwright-temp"
+
+          # Disable codesigning for PyInstaller via environment variable
+          export PYINSTALLER_CODESIGN_IDENTITY=""
+          
+          # Build the executable, adding the local browser copy
+          poetry run pyinstaller main_gui.py --onefile --add-data "./ms-playwright-temp:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
           
           if [ -d "./proxy/" ]; then
               mv ./proxy/ ./dist/

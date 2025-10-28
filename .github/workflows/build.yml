@@ -61,19 +61,29 @@ jobs:
           Move-Item -Path ./proxy -Destination ./dist/
         }
 
-    - name: Build Linux/macOS executable
-      if: matrix.os != 'windows-latest'
+    - name: Build Linux executable
+      if: matrix.os == 'ubuntu-latest'
       shell: bash
       run: |
-        if [ "$RUNNER_OS" == "Linux" ]; then
-          source_browsers="$HOME/.cache/ms-playwright"
-          cp -r "$source_browsers" "./ms-playwright-temp"
-          poetry run pyinstaller main_gui.py --onefile --add-data "./ms-playwright-temp:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
-        else # macOS
-          source_browsers="$HOME/Library/Caches/ms-playwright"
-          cp -r "$source_browsers" "./ms-playwright-temp"
-          poetry run pyinstaller main_gui.py --onefile --no-codesign --add-data "./ms-playwright-temp:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
+        source_browsers="$HOME/.cache/ms-playwright"
+        cp -r "$source_browsers" "./ms-playwright-temp"
+        poetry run pyinstaller main_gui.py --onefile --add-data "./ms-playwright-temp:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
+
+        if [ -d "./proxy/" ]; then
+            mv ./proxy/ ./dist/
         fi
+
+    - name: Build macOS executable
+      if: matrix.os == 'macos-latest'
+      shell: bash
+      run: |
+        source_browsers="$HOME/Library/Caches/ms-playwright"
+        cp -r "$source_browsers" "./ms-playwright-temp"
+        
+        # Disable codesigning for PyInstaller via environment variable
+        export PYINSTALLER_CODESIGN_IDENTITY=""
+        
+        poetry run pyinstaller main_gui.py --onefile --add-data "./ms-playwright-temp:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
 
         if [ -d "./proxy/" ]; then
             mv ./proxy/ ./dist/
