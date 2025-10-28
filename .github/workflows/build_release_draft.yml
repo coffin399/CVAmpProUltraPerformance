@@ -28,9 +28,8 @@ jobs:
       - name: Get packages via poetry
         run: poetry install
 
-      - name: Install Playwright Browsers (Windows/Linux only)
-        if: "!startsWith(matrix.os, 'macos-')"
-        run: poetry run playwright install --with-deps
+      - name: Install Playwright Browsers
+        run: poetry run playwright install chromium firefox
 
       - name: Get CVAmp version number
         uses: SebRollen/toml-action@v1.0.0
@@ -61,27 +60,19 @@ jobs:
             Move-Item -Path ./proxy -Destination ./dist/
           }
 
-      - name: Build Linux executable
-        if: matrix.os == 'ubuntu-22.04'
+      - name: Build Linux/macOS executable
+        if: matrix.os != 'windows-2022'
         shell: bash
         run: |
-          # Copy browsers to a local folder
-          source_browsers="$HOME/.cache/ms-playwright"
-          cp -r "$source_browsers" "./ms-playwright-temp"
-
-          # Build the executable, adding the local browser copy
-          poetry run pyinstaller main_gui.py --onefile --add-data "./ms-playwright-temp:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
-          
-          if [ -d "./proxy/" ]; then
-              mv ./proxy/ ./dist/
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            source_browsers="$HOME/.cache/ms-playwright"
+            cp -r "$source_browsers" "./ms-playwright-temp"
+            poetry run pyinstaller main_gui.py --onefile --add-data "./ms-playwright-temp:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
+          else # macOS
+            # On macOS, browsers are not bundled. This step is for consistency but the data won't be added.
+            mkdir -p ./ms-playwright-temp
+            poetry run pyinstaller main_gui.py --onefile --no-codesign --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
           fi
-
-      - name: Build macOS executable
-        if: startsWith(matrix.os, 'macos-')
-        shell: bash
-        run: |
-          # macOS build without embedded browsers (users need to run 'playwright install' separately)
-          poetry run pyinstaller main_gui.py --onefile --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
           
           if [ -d "./proxy/" ]; then
               mv ./proxy/ ./dist/
@@ -118,4 +109,4 @@ jobs:
           body_path: docs/release_template_text.md
           prerelease: false
           draft: true
-          files: artifacts/**/*.zip
+          files: artifacts/**/*.zip # glob pattern which will match all zip files in any subdirectory of artifacts.

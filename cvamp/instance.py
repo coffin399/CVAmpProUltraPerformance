@@ -149,11 +149,12 @@ class Instance(ABC):
                 "--mute-audio",
                 "--webrtc-ip-handling-policy=disable_non_proxied_udp",
                 "--force-webrtc-ip-handling-policy",
-                # 軽量化オプション追加
+                # Lightweight options
                 "--disable-extensions",
                 "--disable-plugins",
                 "--disable-dev-shm-usage",
                 "--disable-software-rasterizer",
+                "--disable-background-networking",
                 "--disable-background-timer-throttling",
                 "--disable-backgrounding-occluded-windows",
                 "--disable-breakpad",
@@ -162,8 +163,14 @@ class Instance(ABC):
                 "--disable-ipc-flooding-protection",
                 "--disable-renderer-backgrounding",
                 "--disable-sync",
+                "--metrics-recording-only",
                 "--no-default-browser-check",
                 "--no-pings",
+                # GPU acceleration to reduce CPU load
+                "--enable-gpu-rasterization",
+                "--enable-zero-copy",
+                "--enable-features=VaapiVideoDecoder",
+                "--ignore-gpu-blocklist",
             ]
 
             if self.headless:
@@ -191,7 +198,7 @@ class Instance(ABC):
             )
 
         elif self.browser_mode == "performance":
-            # Performance mode - Firefox
+            # Performance mode - Firefox with GPU acceleration and 30 FPS limit
             FIREFOX_ARGS = [
                 "--window-position={},{}".format(self.location_info["x"], self.location_info["y"]),
             ]
@@ -202,12 +209,22 @@ class Instance(ABC):
                 args=FIREFOX_ARGS,
                 firefox_user_prefs={
                     "media.volume_scale": "0.0",
+                    # GPU acceleration enabled to reduce CPU load
+                    "layers.acceleration.force-enabled": True,
+                    "gfx.webrender.all": True,
+                    "gfx.webrender.enabled": True,
+                    "media.hardware-video-decoding.enabled": True,
+                    "media.hardware-video-decoding.force-enabled": True,
+                    "media.ffmpeg.vaapi.enabled": True,
+                    # Frame rate limit to 30 FPS
+                    "layout.frame_rate": 30,
+                    # Lightweight options
                     "browser.cache.disk.enable": False,
                     "browser.cache.memory.enable": True,
+                    "browser.cache.memory.capacity": 32768,  # 32MB
                     "browser.sessionhistory.max_total_viewers": 0,
                     "browser.tabs.animate": False,
                     "browser.download.folderList": 0,
-                    "permissions.default.image": 1,  # 画像は表示（ストリーム用）
                     "dom.webdriver.enabled": False,
                     "useAutomationExtension": False,
                     "network.http.pipelining": True,
@@ -216,6 +233,10 @@ class Instance(ABC):
                     "browser.safebrowsing.enabled": False,
                     "browser.safebrowsing.malware.enabled": False,
                     "privacy.trackingprotection.enabled": False,
+                    # Media optimization
+                    "media.autoplay.default": 0,
+                    "media.eme.enabled": True,
+                    "media.gmp-widevinecdm.enabled": True,
                 },
             )
             user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0"
@@ -233,30 +254,138 @@ class Instance(ABC):
             )
 
         elif self.browser_mode == "ultra":
-            # Ultra Performance mode - WebKit (Safari 17.4相当)
-            WEBKIT_ARGS = []
+            # Ultra Performance mode - Firefox extreme lightweight with 10 FPS limit
+            FIREFOX_ARGS = [
+                "--window-position={},{}".format(self.location_info["x"], self.location_info["y"]),
+            ]
 
-            self.browser = self.playwright.webkit.launch(
+            self.browser = self.playwright.firefox.launch(
                 proxy=proxy_dict,
                 headless=self.headless,
-                args=WEBKIT_ARGS,
+                args=FIREFOX_ARGS,
+                firefox_user_prefs={
+                    "media.volume_scale": "0.0",
+
+                    # GPU acceleration maximized to reduce CPU load
+                    "layers.acceleration.force-enabled": True,
+                    "layers.acceleration.disabled": False,
+                    "gfx.webrender.all": True,
+                    "gfx.webrender.enabled": True,
+                    "gfx.canvas.accelerated": True,
+                    "gfx.canvas.accelerated.cache-items": 32768,
+                    "gfx.canvas.accelerated.cache-size": 4096,
+                    "gfx.content.skia-font-cache-size": 80,
+                    "media.hardware-video-decoding.enabled": True,
+                    "media.hardware-video-decoding.force-enabled": True,
+                    "media.ffmpeg.vaapi.enabled": True,
+                    "media.rdd-ffmpeg.enabled": True,
+                    "media.navigator.mediadatadecoder_vpx_enabled": True,
+
+                    # Frame rate limit to 5 FPS for extreme CPU savings
+                    "layout.frame_rate": 5,
+
+                    # Memory usage reduction (extreme)
+                    "browser.cache.disk.enable": False,
+                    "browser.cache.memory.enable": True,
+                    "browser.cache.memory.capacity": 16384,  # 16MB
+                    "browser.cache.memory.max_entry_size": 512,
+                    "browser.sessionhistory.max_total_viewers": 0,
+                    "browser.sessionstore.interval": 3600000,
+                    "browser.sessionstore.max_tabs_undo": 0,
+                    "browser.sessionstore.max_windows_undo": 0,
+
+                    # UI/Animation completely disabled
+                    "browser.tabs.animate": False,
+                    "browser.fullscreen.animate": False,
+                    "browser.panorama.animate_zoom": False,
+                    "toolkit.cosmeticAnimations.enabled": False,
+                    "ui.prefersReducedMotion": 1,
+
+                    # Unnecessary features completely disabled
+                    "browser.safebrowsing.enabled": False,
+                    "browser.safebrowsing.malware.enabled": False,
+                    "browser.safebrowsing.downloads.enabled": False,
+                    "browser.safebrowsing.downloads.remote.enabled": False,
+                    "privacy.trackingprotection.enabled": False,
+                    "extensions.pocket.enabled": False,
+                    "extensions.screenshots.disabled": True,
+                    "browser.newtabpage.enabled": False,
+                    "browser.startup.homepage": "about:blank",
+                    "browser.messaging-system.whatsNewPanel.enabled": False,
+                    "browser.urlbar.suggest.quicksuggest.sponsored": False,
+                    "browser.urlbar.suggest.quicksuggest.nonsponsored": False,
+
+                    # Network optimization
+                    "network.http.pipelining": True,
+                    "network.http.proxy.pipelining": True,
+                    "network.http.max-connections": 48,
+                    "network.http.max-persistent-connections-per-server": 6,
+                    "network.prefetch-next": False,
+                    "network.dns.disablePrefetch": True,
+                    "network.dns.disablePrefetchFromHTTPS": True,
+                    "network.predictor.enabled": False,
+                    "network.predictor.enable-prefetch": False,
+
+                    # Rendering optimization (GPU utilization)
+                    "layout.css.backdrop-filter.enabled": False,
+                    "layout.css.scroll-behavior.spring-constant": "250",
+
+                    # Media optimization (maintain stream playback)
+                    "media.autoplay.default": 0,
+                    "media.autoplay.blocking_policy": 0,
+                    "media.eme.enabled": True,
+                    "media.gmp-widevinecdm.enabled": True,
+                    "media.gmp-widevinecdm.visible": True,
+                    "media.gmp-widevinecdm.autoupdate": False,
+                    "media.gmp.decoder.enabled": True,
+                    "media.av1.enabled": True,
+                    "media.ffmpeg.low-latency.enabled": True,
+
+                    # Process count reduction (reduce CPU load)
+                    "dom.ipc.processCount": 1,
+                    "dom.ipc.processCount.webIsolated": 1,
+                    "dom.ipc.processPrelaunch.enabled": False,
+                    "dom.ipc.keepProcessesAlive.web": 0,
+
+                    # JavaScript optimization
+                    "javascript.options.baselinejit": True,
+                    "javascript.options.ion": True,
+                    "javascript.options.native_regexp": True,
+                    "javascript.options.parallel_parsing": True,
+                    "javascript.options.asyncstack": False,
+                    "javascript.options.throw_on_debuggee_would_run": False,
+
+                    # Image processing optimization (GPU utilization)
+                    "image.mem.decode_bytes_at_a_time": 65536,
+                    "image.mem.shared.unmap.min_expiration_ms": 60000,
+                    "image.cache.size": 5242880,
+
+                    # Other optimizations
+                    "permissions.default.image": 1,
+                    "permissions.default.stylesheet": 1,
+                    "accessibility.force_disabled": 1,
+                    "browser.contentblocking.category": "custom",
+                    "datareporting.healthreport.uploadEnabled": False,
+                    "datareporting.policy.dataSubmissionEnabled": False,
+
+                    # Automation detection bypass
+                    "dom.webdriver.enabled": False,
+                    "useAutomationExtension": False,
+                    "marionette.enabled": False,
+                },
             )
-            # Playwright 1.43.0 WebKit 17.4に対応したUser-Agent
-            user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15"
+            user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0"
 
             self.context = self.browser.new_context(
                 viewport={"width": 800, "height": 600},
                 user_agent=user_agent,
                 proxy=proxy_dict,
                 ignore_https_errors=True,
-                java_script_enabled=True,
                 bypass_csp=True,
                 color_scheme='no-preference',
                 reduced_motion='reduce',
-                forced_colors='none',
                 service_workers='block',
                 has_touch=False,
-                is_mobile=False,
                 locale='en-US',
                 timezone_id='UTC',
             )
