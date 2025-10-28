@@ -80,8 +80,11 @@ jobs:
         source_browsers="$HOME/Library/Caches/ms-playwright"
         cp -r "$source_browsers" "./ms-playwright-temp"
         
-        # Disable codesigning for PyInstaller via environment variable
-        export PYINSTALLER_CODESIGN_IDENTITY=""
+        # Remove code signature from Chromium binaries to avoid PyInstaller issues
+        find ./ms-playwright-temp -type f \( -name "Chromium" -o -name "*.dylib" -o -name "*.so" \) | while read file; do
+          echo "Removing signature from: $file"
+          codesign --remove-signature "$file" 2>/dev/null || true
+        done
         
         poetry run pyinstaller main_gui.py --onefile --add-data "./ms-playwright-temp:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
 
