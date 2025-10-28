@@ -49,8 +49,14 @@ jobs:
       if: matrix.os == 'windows-latest'
       shell: pwsh
       run: |
-        $browser_path = "$env:LOCALAPPDATA/ms-playwright"
-        poetry run pyinstaller main_gui.py --onefile --add-data "$browser_path;ms-playwright" --add-binary "cvamp_logo.ico;." --add-binary "pyproject.toml;." --icon cvamp_logo.ico --name ${{env.output_filename}}
+        # Copy browsers to a local folder to ensure the path is correct for PyInstaller
+        $source_browsers = "$env:LOCALAPPDATA/ms-playwright"
+        $dest_browsers = "./ms-playwright-temp"
+        Copy-Item -Path $source_browsers -Destination $dest_browsers -Recurse
+
+        # Build the executable, adding the local browser copy
+        poetry run pyinstaller main_gui.py --onefile --add-data "$dest_browsers;ms-playwright" --add-binary "cvamp_logo.ico;." --add-binary "pyproject.toml;." --icon cvamp_logo.ico --name ${{env.output_filename}}
+        
         if (Test-Path -Path ./proxy) {
           Move-Item -Path ./proxy -Destination ./dist/
         }
@@ -59,12 +65,17 @@ jobs:
       if: matrix.os != 'windows-latest'
       shell: bash
       run: |
+        # Determine source browser path and copy to a local folder
         if [ "$RUNNER_OS" == "Linux" ]; then
-          browser_path="$HOME/.cache/ms-playwright"
+          source_browsers="$HOME/.cache/ms-playwright"
         else # macOS
-          browser_path="$HOME/Library/Caches/ms-playwright"
+          source_browsers="$HOME/Library/Caches/ms-playwright"
         fi
-        poetry run pyinstaller main_gui.py --onefile --add-data "$browser_path:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
+        cp -r "$source_browsers" "./ms-playwright-temp"
+
+        # Build the executable, adding the local browser copy
+        poetry run pyinstaller main_gui.py --onefile --add-data "./ms-playwright-temp:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
+        
         if [ -d "./proxy/" ]; then
             mv ./proxy/ ./dist/
         fi

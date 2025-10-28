@@ -1,6 +1,11 @@
 import sys
 import os
 
+# Set console encoding to UTF-8 to prevent UnicodeEncodeError on Windows
+if sys.stdout.encoding != 'utf-8':
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
+
 # PyInstaller-specific code to set browser path
 if getattr(sys, 'frozen', False):
     # If the application is run as a bundle, the PyInstaller bootloader
