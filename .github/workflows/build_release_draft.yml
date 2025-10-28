@@ -64,16 +64,18 @@ jobs:
         if: matrix.os != 'windows-2022'
         shell: bash
         run: |
+          PYINSTALLER_EXTRA_OPTS=""
           # Determine source browser path and copy to a local folder
           if [ "$RUNNER_OS" == "Linux" ]; then
             source_browsers="$HOME/.cache/ms-playwright"
           else # macOS
             source_browsers="$HOME/Library/Caches/ms-playwright"
+            PYINSTALLER_EXTRA_OPTS="--no-codesign"
           fi
           cp -r "$source_browsers" "./ms-playwright-temp"
 
-          # Build the executable, adding the local browser copy
-          poetry run pyinstaller main_gui.py --onefile --add-data "./ms-playwright-temp:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
+          # Build the executable, adding the local browser copy and extra options for macOS
+          poetry run pyinstaller main_gui.py --onefile $PYINSTALLER_EXTRA_OPTS --add-data "./ms-playwright-temp:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
           
           if [ -d "./proxy/" ]; then
               mv ./proxy/ ./dist/
