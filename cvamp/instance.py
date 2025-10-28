@@ -87,16 +87,7 @@ class Instance(ABC):
             self.spawn_page()
             self.todo_after_spawn()
 
-            if self.browser_mode == "ultra":
-                logger.info(f"Instance {self.id} is in ultra mode, saving debug files.")
-                print(f"Instance {self.id} (WebKit) saving debug files: debug_webkit.png, debug_webkit.html")
-                try:
-                    self.page.screenshot(path="debug_webkit.png", full_page=True)
-                    with open("debug_webkit.html", "w", encoding="utf-8") as f:
-                        f.write(self.page.content())
-                    print(f"Instance {self.id} (WebKit) successfully saved debug files.")
-                except Exception as debug_e:
-                    print(f"Instance {self.id} (WebKit) failed to save debug files: {debug_e}")
+            # The debug code is no longer needed, so it has been removed.
 
             self.loop_and_check()
         except Exception as e:
@@ -240,6 +231,17 @@ class Instance(ABC):
         """
         self.status = utils.InstanceStatus.INITIALIZED
         self.goto_with_retry(self.target_url)
+        
+        # Click the cookie consent button if it exists
+        try:
+            cookie_button = self.page.get_by_test_id("accept-cookies")
+            if cookie_button.is_visible():
+                print(f"Instance {self.id} clicking cookie consent button.")
+                cookie_button.click(timeout=5000)
+        except Exception as e:
+            # Button not found or other error, just log and continue
+            logger.info(f"Instance {self.id} could not click cookie button (may not exist): {e}")
+
 
     def todo_every_loop(self):
         """

@@ -73,7 +73,7 @@ class GUI:
 
         self.root = tk.Tk()
         self.root.configure(bg="#1e1e1e")
-        
+
         self.menu = tk.Menu(self.root)
 
         self.instances_overview = dict()
@@ -93,7 +93,7 @@ class GUI:
         style.configure("TFrame", background=self.bg_color)
         style.configure("TLabel", background=self.bg_color, foreground=self.text_color)
         style.configure("TCheckbutton", background=self.bg_color, foreground=self.text_color)
-
+        style.configure("TNotebook", bordercolor=self.bg_color)
         # Initialize tabs
         self.notebook = ttk.Notebook(self.root, height=750, width=500)
 

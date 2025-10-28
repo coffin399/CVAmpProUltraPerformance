@@ -6,8 +6,8 @@ if sys.stdout.encoding != 'utf-8':
     sys.stdout.reconfigure(encoding='utf-8')
     sys.stderr.reconfigure(encoding='utf-8')
 
-# PyInstaller-specific code to set browser path
-if getattr(sys, 'frozen', False):
+# PyInstaller-specific code to set browser path for non-macOS builds
+if getattr(sys, 'frozen', False) and sys.platform != "darwin":
     # If the application is run as a bundle, the PyInstaller bootloader
     # extends the sys module by a flag frozen=True and sets the app 
     # path into variable _MEIPASS'.
