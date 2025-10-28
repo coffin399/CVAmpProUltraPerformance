@@ -80,11 +80,12 @@ jobs:
         source_browsers="$HOME/Library/Caches/ms-playwright"
         cp -r "$source_browsers" "./ms-playwright-temp"
         
-        # Remove code signature from Chromium binaries to avoid PyInstaller issues
-        find ./ms-playwright-temp -type f \( -name "Chromium" -o -name "*.dylib" -o -name "*.so" \) | while read file; do
-          echo "Removing signature from: $file"
-          codesign --remove-signature "$file" 2>/dev/null || true
-        done
+        # Clear PyInstaller cache to avoid issues with cached signed binaries
+        rm -rf "$HOME/Library/Application Support/pyinstaller" || true
+        
+        # Remove executable permissions and signatures from browser binaries
+        find ./ms-playwright-temp -type f \( -name "Chromium" -o -name "firefox" -o -perm +111 \) -exec chmod -x {} \; 2>/dev/null || true
+        find ./ms-playwright-temp -type f \( -name "*.dylib" -o -name "*.so" \) -exec codesign --remove-signature {} \; 2>/dev/null || true
         
         poetry run pyinstaller main_gui.py --onefile --add-data "./ms-playwright-temp:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
 
