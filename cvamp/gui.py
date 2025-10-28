@@ -338,7 +338,7 @@ class TabMain(tk.Frame):
                                           activebackground=card_color, activeforeground=text_color, font=("Segoe UI", 9))
         mode_performance.place(x=10, y=55)
 
-        mode_ultra = tk.Radiobutton(mode_frame, text="UltraPerformance (WebKit)", variable=self.browser_mode, value="ultra",
+        mode_ultra = tk.Radiobutton(mode_frame, text="UltraPerformance (Firefox)", variable=self.browser_mode, value="ultra",
                                     command=self.on_mode_change, bg=card_color, fg=subtext_color, selectcolor="#353535",
                                     activebackground=card_color, activeforeground=text_color, font=("Segoe UI", 9))
         mode_ultra.place(x=10, y=80)
