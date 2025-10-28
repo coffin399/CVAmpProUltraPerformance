@@ -1,3 +1,14 @@
+import sys
+import os
+
+# PyInstaller-specific code to set browser path
+if getattr(sys, 'frozen', False):
+    # If the application is run as a bundle, the PyInstaller bootloader
+    # extends the sys module by a flag frozen=True and sets the app 
+    # path into variable _MEIPASS'.
+    basedir = sys._MEIPASS
+    os.environ['PLAYWRIGHT_BROWSERS_PATH'] = os.path.join(basedir, 'ms-playwright')
+
 from cvamp.gui import GUI
 from cvamp.manager import InstanceManager
 

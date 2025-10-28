@@ -38,7 +38,7 @@ class PerformanceMonitor:
         """Calculate network speed in Mbps and MB/s"""
         try:
             net_io = psutil.net_io_counters()
-            current_bytes_sent = net_io.bytes_bytes_sent
+            current_bytes_sent = net_io.bytes_sent
             current_bytes_recv = net_io.bytes_recv
             current_total = current_bytes_sent + current_bytes_recv
             
@@ -487,7 +487,13 @@ class TabMain(tk.Frame):
 
     def on_mode_change(self):
         self.manager.set_browser_mode(self.browser_mode.get())
-        print(f"Browser mode changed to: {self.browser_mode.get()}")
+        mode = self.browser_mode.get()
+        mode_map = {
+            "standard": "Standard (Chrome)",
+            "performance": "Performance (Firefox)",
+            "ultra": "UltraPerformance (WebKit)"
+        }
+        print(f"Browser mode changed to: {mode_map.get(mode, mode)}")
 
     def spawn_instance(self, count):
         print(f"Spawning {count} instance(s). Please wait for alive & watching instances increase.")

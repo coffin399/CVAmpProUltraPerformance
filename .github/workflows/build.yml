@@ -2,15 +2,12 @@ name: Build and Test
 
 on: [pull_request]
 
-env:
-  PLAYWRIGHT_BROWSERS_PATH: 0
-
 jobs:
   build:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04]
+        os: [windows-latest, ubuntu-latest, macos-latest]
         python-version: [3.11]
 
     runs-on: ${{ matrix.os }}
@@ -27,6 +24,9 @@ jobs:
       run: poetry lock
     - name: Get packages via poetry
       run: poetry install
+
+    - name: Install Playwright Browsers
+      run: poetry run playwright install --with-deps
 
     - name: Get CVAmp version number
       uses: SebRollen/toml-action@v1.0.0
@@ -49,9 +49,11 @@ jobs:
       shell: bash
       run: |
         if [ "$RUNNER_OS" == "Windows" ]; then
-          poetry run pyinstaller main_gui.py --onefile --add-binary "cvamp_logo.ico;." --add-binary "pyproject.toml;." --icon cvamp_logo.ico --name ${{env.output_filename}}
-        else
-          poetry run pyinstaller main_gui.py --onefile --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
+          poetry run pyinstaller main_gui.py --onefile --add-data "$LOCALAPPDATA/ms-playwright;ms-playwright" --add-binary "cvamp_logo.ico;." --add-binary "pyproject.toml;." --icon cvamp_logo.ico --name ${{env.output_filename}}
+        elif [ "$RUNNER_OS" == "Linux" ]; then
+          poetry run pyinstaller main_gui.py --onefile --add-data "$HOME/.cache/ms-playwright:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
+        elif [ "$RUNNER_OS" == "macOS" ]; then
+          poetry run pyinstaller main_gui.py --onefile --add-data "$HOME/Library/Caches/ms-playwright:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
         fi
         mv ./proxy/ ./dist/
 
