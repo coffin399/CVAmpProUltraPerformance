@@ -5,9 +5,6 @@ on:
     tags:
       - "v*"
 
-env:
-  PLAYWRIGHT_BROWSERS_PATH: 0
-
 jobs:
   build:
     strategy:
@@ -31,6 +28,9 @@ jobs:
       - name: Get packages via poetry
         run: poetry install
 
+      - name: Install Playwright Browsers
+        run: poetry run playwright install --with-deps
+
       - name: Get CVAmp version number
         uses: SebRollen/toml-action@v1.0.0
         id: read_toml
@@ -42,17 +42,42 @@ jobs:
         shell: bash
         run: |
           export today=$(date +'%Y%m%d')
-            echo "output_filename=CVAmp_v${{steps.read_toml.outputs.value}}_${today}_${{runner.os}}-${{runner.arch}}" >> $GITHUB_ENV
+          echo "output_filename=CVAmp_v${{steps.read_toml.outputs.value}}_${today}_${{runner.os}}-${{runner.arch}}" >> $GITHUB_ENV
 
-      - name: Build executable
+      - name: Build Windows executable
+        if: matrix.os == 'windows-2022'
+        shell: pwsh
+        run: |
+          # Copy browsers to a local folder to ensure the path is correct for PyInstaller
+          $source_browsers = "$env:LOCALAPPDATA/ms-playwright"
+          $dest_browsers = "./ms-playwright-temp"
+          Copy-Item -Path $source_browsers -Destination $dest_browsers -Recurse
+
+          # Build the executable, adding the local browser copy
+          poetry run pyinstaller main_gui.py --onefile --add-data "$dest_browsers;ms-playwright" --add-binary "cvamp_logo.ico;." --add-binary "pyproject.toml;." --icon cvamp_logo.ico --name ${{env.output_filename}}
+          
+          if (Test-Path -Path ./proxy) {
+            Move-Item -Path ./proxy -Destination ./dist/
+          }
+
+      - name: Build Linux/macOS executable
+        if: matrix.os != 'windows-2022'
         shell: bash
         run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            poetry run pyinstaller main_gui.py --onefile --add-binary "cvamp_logo.ico;." --add-binary "pyproject.toml;." --icon cvamp_logo.ico --name ${{env.output_filename}}
-          else
-            poetry run pyinstaller main_gui.py --onefile --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
+          # Determine source browser path and copy to a local folder
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            source_browsers="$HOME/.cache/ms-playwright"
+          else # macOS
+            source_browsers="$HOME/Library/Caches/ms-playwright"
           fi
-          mv ./proxy/ ./dist/
+          cp -r "$source_browsers" "./ms-playwright-temp"
+
+          # Build the executable, adding the local browser copy
+          poetry run pyinstaller main_gui.py --onefile --add-data "./ms-playwright-temp:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
+          
+          if [ -d "./proxy/" ]; then
+              mv ./proxy/ ./dist/
+          fi
 
       - name: Zip executable
         uses: vimtor/action-zip@v1
