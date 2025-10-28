@@ -86,6 +86,18 @@ class Instance(ABC):
         try:
             self.spawn_page()
             self.todo_after_spawn()
+
+            if self.browser_mode == "ultra":
+                logger.info(f"Instance {self.id} is in ultra mode, saving debug files.")
+                print(f"Instance {self.id} (WebKit) saving debug files: debug_webkit.png, debug_webkit.html")
+                try:
+                    self.page.screenshot(path="debug_webkit.png", full_page=True)
+                    with open("debug_webkit.html", "w", encoding="utf-8") as f:
+                        f.write(self.page.content())
+                    print(f"Instance {self.id} (WebKit) successfully saved debug files.")
+                except Exception as debug_e:
+                    print(f"Instance {self.id} (WebKit) failed to save debug files: {debug_e}")
+
             self.loop_and_check()
         except Exception as e:
             message = e.args[0][:25] if e.args else ""
