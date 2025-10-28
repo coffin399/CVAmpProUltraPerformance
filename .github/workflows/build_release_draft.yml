@@ -28,7 +28,8 @@ jobs:
       - name: Get packages via poetry
         run: poetry install
 
-      - name: Install Playwright Browsers
+      - name: Install Playwright Browsers (Windows/Linux only)
+        if: "!startsWith(matrix.os, 'macos-')"
         run: poetry run playwright install --with-deps
 
       - name: Get CVAmp version number
@@ -79,20 +80,8 @@ jobs:
         if: startsWith(matrix.os, 'macos-')
         shell: bash
         run: |
-          # Copy browsers to a local folder
-          source_browsers="$HOME/Library/Caches/ms-playwright"
-          cp -r "$source_browsers" "./ms-playwright-temp"
-
-          # Clear PyInstaller cache to avoid issues with cached signed binaries
-          rm -rf "$HOME/Library/Application Support/pyinstaller" || true
-          
-          # Remove executable permissions and signatures from browser binaries
-          # This forces PyInstaller to treat them as data files instead of executables
-          find ./ms-playwright-temp -type f \( -name "Chromium" -o -name "firefox" -o -perm +111 \) -exec chmod -x {} \; 2>/dev/null || true
-          find ./ms-playwright-temp -type f \( -name "*.dylib" -o -name "*.so" \) -exec codesign --remove-signature {} \; 2>/dev/null || true
-
-          # Build the executable, adding browsers as data (not binaries)
-          poetry run pyinstaller main_gui.py --onefile --add-data "./ms-playwright-temp:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
+          # macOS build without embedded browsers (users need to run 'playwright install' separately)
+          poetry run pyinstaller main_gui.py --onefile --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
           
           if [ -d "./proxy/" ]; then
               mv ./proxy/ ./dist/
