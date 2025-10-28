@@ -78,18 +78,19 @@ jobs:
       - name: Build macOS executable
         if: startsWith(matrix.os, 'macos-')
         shell: bash
-        env:
-          PYINSTALLER_COMPILE_BOOTLOADER: 1
         run: |
           # Copy browsers to a local folder
           source_browsers="$HOME/Library/Caches/ms-playwright"
           cp -r "$source_browsers" "./ms-playwright-temp"
 
-          # Disable codesigning for PyInstaller via environment variable
-          export PYINSTALLER_CODESIGN_IDENTITY=""
+          # Generate spec file first
+          poetry run pyi-makespec main_gui.py --onefile --add-data "./ms-playwright-temp:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
           
-          # Build the executable, adding the local browser copy
-          poetry run pyinstaller main_gui.py --onefile --add-data "./ms-playwright-temp:ms-playwright" --add-binary "cvamp_logo.ico:." --hidden-import=tkinter --add-binary "pyproject.toml:." --icon cvamp_logo.ico --name ${{env.output_filename}}.bin
+          # Modify spec file to disable codesigning
+          sed -i '' 's/codesign_identity=None/codesign_identity=None, skip_binaries=True/g' ${{env.output_filename}}.bin.spec
+          
+          # Build using the modified spec file
+          poetry run pyinstaller ${{env.output_filename}}.bin.spec
           
           if [ -d "./proxy/" ]; then
               mv ./proxy/ ./dist/
@@ -126,4 +127,4 @@ jobs:
           body_path: docs/release_template_text.md
           prerelease: false
           draft: true
-          files: artifacts/**/*.zip # glob pattern which will match all zip files in any subdirectory of artifacts.
+          files: artifacts/**/*.zip
