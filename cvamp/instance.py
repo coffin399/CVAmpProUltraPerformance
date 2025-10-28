@@ -149,6 +149,21 @@ class Instance(ABC):
                 "--mute-audio",
                 "--webrtc-ip-handling-policy=disable_non_proxied_udp",
                 "--force-webrtc-ip-handling-policy",
+                # 軽量化オプション追加
+                "--disable-extensions",
+                "--disable-plugins",
+                "--disable-dev-shm-usage",
+                "--disable-software-rasterizer",
+                "--disable-background-timer-throttling",
+                "--disable-backgrounding-occluded-windows",
+                "--disable-breakpad",
+                "--disable-component-extensions-with-background-pages",
+                "--disable-features=TranslateUI,BlinkGenPropertyTrees",
+                "--disable-ipc-flooding-protection",
+                "--disable-renderer-backgrounding",
+                "--disable-sync",
+                "--no-default-browser-check",
+                "--no-pings",
             ]
 
             if self.headless:
@@ -162,6 +177,19 @@ class Instance(ABC):
             )
             major_version = self.browser.version.split(".")[0]
             user_agent = f"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{major_version}.0.0.0 Safari/537.36"
+
+            self.context = self.browser.new_context(
+                viewport={"width": 800, "height": 600},
+                user_agent=user_agent,
+                proxy=proxy_dict,
+                ignore_https_errors=True,
+                bypass_csp=True,
+                color_scheme='no-preference',
+                reduced_motion='reduce',
+                service_workers='block',
+                has_touch=False,
+            )
+
         elif self.browser_mode == "performance":
             # Performance mode - Firefox
             FIREFOX_ARGS = [
@@ -171,33 +199,90 @@ class Instance(ABC):
             self.browser = self.playwright.firefox.launch(
                 proxy=proxy_dict,
                 headless=self.headless,
+                args=FIREFOX_ARGS,
                 firefox_user_prefs={
                     "media.volume_scale": "0.0",
+                    "browser.cache.disk.enable": False,
+                    "browser.cache.memory.enable": True,
+                    "browser.sessionhistory.max_total_viewers": 0,
+                    "browser.tabs.animate": False,
+                    "browser.download.folderList": 0,
+                    "permissions.default.image": 1,  # 画像は表示（ストリーム用）
+                    "dom.webdriver.enabled": False,
+                    "useAutomationExtension": False,
+                    "network.http.pipelining": True,
+                    "network.http.proxy.pipelining": True,
+                    "network.prefetch-next": False,
+                    "browser.safebrowsing.enabled": False,
+                    "browser.safebrowsing.malware.enabled": False,
+                    "privacy.trackingprotection.enabled": False,
                 },
             )
             user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0"
+
+            self.context = self.browser.new_context(
+                viewport={"width": 800, "height": 600},
+                user_agent=user_agent,
+                proxy=proxy_dict,
+                ignore_https_errors=True,
+                bypass_csp=True,
+                color_scheme='no-preference',
+                reduced_motion='reduce',
+                service_workers='block',
+                has_touch=False,
+            )
+
         elif self.browser_mode == "ultra":
-            # Ultra Performance mode - WebKit
+            # Ultra Performance mode - WebKit (Safari 17.4相当)
+            WEBKIT_ARGS = []
+
             self.browser = self.playwright.webkit.launch(
                 proxy=proxy_dict,
                 headless=self.headless,
+                args=WEBKIT_ARGS,
             )
-            user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15"
+            # Playwright 1.43.0 WebKit 17.4に対応したUser-Agent
+            user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15"
+
+            self.context = self.browser.new_context(
+                viewport={"width": 800, "height": 600},
+                user_agent=user_agent,
+                proxy=proxy_dict,
+                ignore_https_errors=True,
+                java_script_enabled=True,
+                bypass_csp=True,
+                color_scheme='no-preference',
+                reduced_motion='reduce',
+                forced_colors='none',
+                service_workers='block',
+                has_touch=False,
+                is_mobile=False,
+                locale='en-US',
+                timezone_id='UTC',
+            )
+
         else:
             # Default to Chrome if mode is invalid
+            CHROMIUM_ARGS = [
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--mute-audio",
+            ]
+
             self.browser = self.playwright.chromium.launch(
                 proxy=proxy_dict,
                 channel="chrome",
                 headless=False,
+                args=CHROMIUM_ARGS,
             )
             major_version = self.browser.version.split(".")[0]
             user_agent = f"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{major_version}.0.0.0 Safari/537.36"
 
-        self.context = self.browser.new_context(
-            viewport={"width": 800, "height": 600},
-            user_agent=user_agent,
-            proxy=proxy_dict,
-        )
+            self.context = self.browser.new_context(
+                viewport={"width": 800, "height": 600},
+                user_agent=user_agent,
+                proxy=proxy_dict,
+            )
 
         self.page = self.context.new_page()
         self.page.add_init_script("""navigator.webdriver = false;""")
